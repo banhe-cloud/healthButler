@@ -1,0 +1,401 @@
+<view class="page">
+
+  <!-- 状态栏占位 -->
+  <view class="status-bar" style="height: {{statusBarHeight}}px;"></view>
+
+  <!-- 顶部导航（配合 input adjust-position=false，整页不随键盘上推，标题不会「飞走」） -->
+  <view class="nav-bar">
+    <view class="nav-bar-inner">
+      <view class="nav-info">
+        <text class="nav-title">AI饮食管家 - 柯基</text>
+        <text class="nav-sub">今日已摄入 <text class="nav-kcal">{{dailyIntake}}</text> / {{targetCalories}} kcal</text>
+      </view>
+    </view>
+    <view class="calorie-bar-wrap">
+      <view class="calorie-bar">
+        <view class="calorie-bar-fill" style="width: {{caloriePercent}}%;"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 聊天区域（padding-bottom 为固定底栏 + 键盘留白，避免内容被挡住） -->
+  <scroll-view
+    class="chat-area"
+    style="padding-bottom: {{scrollAreaPaddingBottom}}px;"
+    scroll-y
+    scroll-into-view="{{scrollToId}}"
+    scroll-with-animation
+    enable-flex
+  >
+    <!-- 历史记录加载中 -->
+    <view wx:if="{{isLoadingHistory}}" class="history-loading">
+      <view class="history-loading-dot dot1"></view>
+      <view class="history-loading-dot dot2"></view>
+      <view class="history-loading-dot dot3"></view>
+      <text class="history-loading-text">加载历史记录…</text>
+    </view>
+
+    <!-- 日期分割线 -->
+    <view wx:if="{{!isLoadingHistory}}" class="date-chip">
+      <text>{{todayLabel}}</text>
+    </view>
+
+    <!-- 消息列表 -->
+    <block wx:for="{{messages}}" wx:key="id">
+
+      <!-- AI 消息 -->
+      <view wx:if="{{item.role === 'ai'}}" class="bubble-row" id="msg-{{item.id}}">
+        <view class="avatar ai-avatar-icon">
+          <image class="avatar-img avatar-img--ai" src="/assets/icons/keji.png" mode="aspectFit"></image>
+        </view>
+        <view class="bubble-content {{item.type === 'card' || item.type === 'nutrition' || item.type === 'profile_plan' || item.type === 'profile_guide' || item.type === 'summary' ? 'bubble-content--wide' : ''}}">
+
+          <!-- 普通文本气泡 -->
+          <view wx:if="{{item.type === 'chat' || !item.type}}" class="bubble ai-bubble">
+            <text>{{item.text}}</text>
+          </view>
+
+          <!-- 档案引导卡片（结构化，无 Markdown） -->
+          <view wx:if="{{item.type === 'profile_guide' && item.profileGuide}}">
+            <view wx:if="{{item.profileGuide.variant === 'pending_card'}}" class="profile-guide-card profile-guide-card--compact">
+              <view class="pg-banner pg-banner-info pg-banner-only">
+                <text>请先确认或取消上方的「每日摄入计划」卡片，再继续对话</text>
+              </view>
+            </view>
+            <view wx:elif="{{item.profileGuide.variant === 'pending_edit_card'}}" class="profile-guide-card profile-guide-card--compact">
+              <view class="pg-banner pg-banner-info pg-banner-only">
+                <text>请先确认或取消上方的「档案更新」卡片，再继续对话</text>
+              </view>
+            </view>
+            <view wx:else class="profile-guide-card">
+              <view class="pg-header">
+                <text class="pg-emoji">🥗</text>
+                <view class="pg-header-text">
+                  <text class="pg-title">完善健康档案</text>
+                  <text class="pg-sub">用于计算你的每日摄入计划与营养目标</text>
+                </view>
+              </view>
+              <view class="pg-body">
+                <view class="pg-row">
+                  <text class="pg-label">必填</text>
+                  <view class="pg-chips">
+                    <text class="pg-chip pg-chip-req">身高</text>
+                    <text class="pg-chip pg-chip-req">体重</text>
+                    <text class="pg-chip pg-chip-req">性别</text>
+                  </view>
+                </view>
+                <view class="pg-row">
+                  <text class="pg-label">选填</text>
+                  <view class="pg-chips">
+                    <text class="pg-chip">年龄</text>
+                    <text class="pg-chip">病史 / 过敏</text>
+                    <text class="pg-chip">目标：减脂 · 维持 · 增肌</text>
+                  </view>
+                </view>
+                <view class="pg-example">
+                  <text class="pg-example-label">示例</text>
+                  <text class="pg-example-text">男，28岁，身高175，体重72公斤，无过敏，想减脂</text>
+                </view>
+              </view>
+              <view wx:if="{{item.profileGuide.variant === 'missing' && item.profileGuide.missingFields && item.profileGuide.missingFields.length}}" class="pg-missing">
+                <text class="pg-missing-title">还差这些信息</text>
+                <view class="pg-chips">
+                  <text wx:for="{{item.profileGuide.missingFields}}" wx:for-item="mf" wx:key="*this" class="pg-chip pg-chip-warn">{{mf}}</text>
+                </view>
+              </view>
+              <view wx:if="{{item.profileGuide.variant === 'blocked_food'}}" class="pg-banner pg-banner-warn">
+                <text>🍽 记录饮食前需要先完成档案哦</text>
+              </view>
+              <view wx:if="{{item.profileGuide.variant === 'blocked_image'}}" class="pg-banner pg-banner-warn">
+                <text>📷 上传饮食照片前需要先完成档案哦</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- typing 动画气泡 -->
+          <view wx:if="{{item.type === 'typing'}}" class="bubble ai-bubble">
+            <view class="typing">
+              <view class="typing-dot dot1"></view>
+              <view class="typing-dot dot2"></view>
+              <view class="typing-dot dot3"></view>
+            </view>
+          </view>
+
+          <!-- 营养卡片（已记录，type === 'nutrition'） -->
+          <view wx:if="{{item.type === 'nutrition'}}">
+            <view wx:if="{{item.text}}" class="bubble ai-bubble">
+              <text>{{item.text}}</text>
+            </view>
+            <view class="nutrition-card">
+              <text class="food-name">🍽 {{item.nutrition.foodName}}（{{item.nutrition.weight}}）</text>
+              <view class="nut-row">
+                <view class="nut-item">
+                  <text class="nut-val green">{{item.nutrition.calories}}</text>
+                  <text class="nut-lbl">千卡</text>
+                </view>
+                <view class="nut-item">
+                  <text class="nut-val blue">{{item.nutrition.carbs}}g</text>
+                  <text class="nut-lbl">碳水</text>
+                </view>
+                <view class="nut-item">
+                  <text class="nut-val purple">{{item.nutrition.protein}}g</text>
+                  <text class="nut-lbl">蛋白质</text>
+                </view>
+                <view class="nut-item">
+                  <text class="nut-val orange">{{item.nutrition.fat}}g</text>
+                  <text class="nut-lbl">脂肪</text>
+                </view>
+              </view>
+              <view class="card-calorie-bar-wrap">
+                <view class="card-calorie-labels">
+                  <text class="card-calorie-lbl-text">今日热量进度</text>
+                  <text class="card-calorie-lbl-val">{{item.nutrition.afterIntake}} / {{targetCalories}} kcal</text>
+                </view>
+                <view class="card-calorie-bar">
+                  <view class="card-calorie-fill" style="width: {{item.nutrition.afterPercent}}%;"></view>
+                </view>
+              </view>
+            </view>
+            <view wx:if="{{item.suggestion}}" class="bubble ai-bubble suggestion-bubble">
+              <text>{{item.suggestion}}</text>
+            </view>
+          </view>
+
+          <!-- 今日/本周汇总（进度条） -->
+          <view wx:if="{{item.type === 'summary' && item.summaryCard}}">
+            <view wx:if="{{item.text}}" class="bubble ai-bubble">
+              <text>{{item.text}}</text>
+            </view>
+            <view class="summary-card">
+              <view class="summary-card-head">
+                <text class="summary-card-title">{{item.summaryCard.title}}</text>
+                <text class="summary-card-sub">{{item.summaryCard.subtitle}}</text>
+              </view>
+              <block wx:for="{{item.summaryCard.metrics}}" wx:for-item="metric" wx:key="key">
+                <view class="summary-metric-row">
+                  <view class="summary-metric-top">
+                    <text class="summary-metric-label">{{metric.label}}</text>
+                    <text class="summary-metric-val">{{metric.current}} / {{metric.target}} {{metric.unit}}</text>
+                  </view>
+                  <view class="summary-metric-bar-wrap">
+                    <view class="summary-metric-bar-fill" style="width: {{metric.barPercent}}%;"></view>
+                  </view>
+                </view>
+              </block>
+              <view wx:if="{{item.summaryCard.mealLines && item.summaryCard.mealLines.length}}" class="summary-meals">
+                <text class="summary-meals-title">餐次明细</text>
+                <view wx:for="{{item.summaryCard.mealLines}}" wx:for-item="line" wx:key="*this" class="summary-meal-line-wrap">
+                  <text class="summary-meal-line">{{line}}</text>
+                </view>
+              </view>
+              <view wx:if="{{item.summaryCard.advice}}" class="summary-advice">
+                <text class="summary-advice-label">💡 建议</text>
+                <text class="summary-advice-text">{{item.summaryCard.advice}}</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 健康档案 + 每日摄入计划（待确认） -->
+          <view wx:if="{{item.type === 'profile_plan'}}">
+            <view wx:if="{{item.text}}" class="bubble ai-bubble">
+              <text>{{item.text}}</text>
+            </view>
+            <view class="profile-plan-card {{item.confirmed ? 'confirm-card--done' : ''}}">
+              <view class="confirm-card-header">
+                <text class="confirm-card-title" wx:if="{{item.card.profilePlanMode === 'view'}}">👤 个人健康档案</text>
+                <text class="confirm-card-title" wx:elif="{{item.card.profilePlanMode === 'update'}}">📋 档案更新确认</text>
+                <text class="confirm-card-title" wx:else>📋 每日摄入计划</text>
+                <text wx:if="{{item.confirmed && !item.rejected}}" class="confirm-card-badge">✓ 已确认</text>
+                <text wx:if="{{item.rejected}}" class="confirm-card-badge confirm-card-badge--rejected">✕ 已取消</text>
+              </view>
+              <view class="profile-plan-meta">
+                <text>{{item.card.gender === 'male' ? '男' : '女'}} · {{item.card.heightCm}}cm · {{item.card.weightKg}}kg</text>
+                <text wx:if="{{item.card.age}}"> · {{item.card.age}}岁</text>
+              </view>
+              <view wx:if="{{item.card.diseases}}" class="profile-plan-meta profile-plan-meta--small">
+                <text>病史：{{item.card.diseases}}</text>
+              </view>
+              <view wx:if="{{item.card.allergies}}" class="profile-plan-meta profile-plan-meta--small">
+                <text>过敏：{{item.card.allergies}}</text>
+              </view>
+              <view class="profile-plan-bmi">
+                <text class="profile-bmi-val">BMI {{item.card.bmi}}</text>
+                <text class="profile-bmi-cat">{{item.card.bmiCategory}}</text>
+              </view>
+              <view class="profile-plan-eval">
+                <text>{{item.card.evaluationText}}</text>
+              </view>
+              <view class="profile-plan-kcal">
+                <text class="confirm-card-kcal">{{item.card.dailyCalories}}</text>
+                <text class="confirm-card-kcal-lbl"> kcal/天</text>
+              </view>
+              <view class="confirm-card-nut-row">
+                <view class="confirm-card-nut-item">
+                  <text class="confirm-card-nut-val purple">{{item.card.proteinG}}g</text>
+                  <text class="confirm-card-nut-lbl">蛋白质</text>
+                </view>
+                <view class="confirm-card-nut-item">
+                  <text class="confirm-card-nut-val blue">{{item.card.carbsG}}g</text>
+                  <text class="confirm-card-nut-lbl">碳水</text>
+                </view>
+                <view class="confirm-card-nut-item">
+                  <text class="confirm-card-nut-val orange">{{item.card.fatG}}g</text>
+                  <text class="confirm-card-nut-lbl">脂肪</text>
+                </view>
+                <view class="confirm-card-nut-item">
+                  <text class="confirm-card-nut-val gray">≥{{item.card.fiberMinG}}g</text>
+                  <text class="confirm-card-nut-lbl">膳食纤维</text>
+                </view>
+              </view>
+              <view class="profile-plan-extra">
+                <text>蔬菜 ≥ {{item.card.vegetablesMinG}}g/天 · 水果 {{item.card.fruitMinG}}～{{item.card.fruitMaxG}}g/天</text>
+              </view>
+              <view wx:if="{{item.card.adviceText}}" class="confirm-card-reminder">
+                <text>💡 {{item.card.adviceText}}</text>
+              </view>
+              <view wx:if="{{!item.confirmed && item.card.profilePlanMode !== 'view'}}" class="confirm-card-actions">
+                <view class="confirm-btn reject-btn" bindtap="rejectCard" data-id="{{item.id}}">
+                  <text wx:if="{{item.card.profilePlanMode === 'update'}}">✕ 取消修改</text>
+                  <text wx:else>✕ 取消</text>
+                </view>
+                <view class="confirm-btn accept-btn" bindtap="confirmCard" data-id="{{item.id}}">
+                  <text wx:if="{{item.card.profilePlanMode === 'update'}}">✓ 确认修改</text>
+                  <text wx:else>✓ 确认档案</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 营养确认卡片（待确认，type === 'card'） -->
+          <view wx:if="{{item.type === 'card'}}">
+            <view class="confirm-card {{item.confirmed ? 'confirm-card--done' : ''}}">
+              <!-- 标题 -->
+              <view class="confirm-card-header">
+                <text class="confirm-card-title">🧾 营养确认卡片</text>
+                <text wx:if="{{item.confirmed && !item.rejected}}" class="confirm-card-badge">✓ 已记录</text>
+                <text wx:if="{{item.rejected}}" class="confirm-card-badge confirm-card-badge--rejected">✕ 已取消</text>
+              </view>
+              <!-- 食物名称 + 份量 -->
+              <view class="confirm-card-food">
+                <text class="confirm-card-food-name">{{item.card.foodName}}</text>
+                <text class="confirm-card-quantity">{{item.card.quantity}}</text>
+              </view>
+              <!-- 热量 -->
+              <view class="confirm-card-calories">
+                <text class="confirm-card-kcal">{{item.card.calories}}</text>
+                <text class="confirm-card-kcal-lbl"> kcal</text>
+              </view>
+              <!-- 营养数据行 -->
+              <view class="confirm-card-nut-row">
+                <view class="confirm-card-nut-item">
+                  <text class="confirm-card-nut-val purple">{{item.card.protein}}g</text>
+                  <text class="confirm-card-nut-lbl">蛋白质</text>
+                </view>
+                <view class="confirm-card-nut-item">
+                  <text class="confirm-card-nut-val blue">{{item.card.carbs}}g</text>
+                  <text class="confirm-card-nut-lbl">碳水</text>
+                </view>
+                <view class="confirm-card-nut-item">
+                  <text class="confirm-card-nut-val orange">{{item.card.fat}}g</text>
+                  <text class="confirm-card-nut-lbl">脂肪</text>
+                </view>
+                <view class="confirm-card-nut-item">
+                  <text class="confirm-card-nut-val gray">{{item.card.fiber}}g</text>
+                  <text class="confirm-card-nut-lbl">膳食纤维</text>
+                </view>
+              </view>
+              <!-- 健康提醒 -->
+              <view wx:if="{{item.card.healthReminder}}" class="confirm-card-reminder">
+                <text>💡 {{item.card.healthReminder}}</text>
+              </view>
+              <!-- 操作按钮（未确认时显示） -->
+              <view wx:if="{{!item.confirmed}}" class="confirm-card-actions">
+                <view class="confirm-btn reject-btn" bindtap="rejectCard" data-id="{{item.id}}">
+                  <text>✕ 取消</text>
+                </view>
+                <view class="confirm-btn accept-btn" bindtap="confirmCard" data-id="{{item.id}}">
+                  <text>✓ 确认记录</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+        </view>
+      </view>
+
+      <!-- 历史记录分隔条 -->
+      <view wx:if="{{item.role === 'system' && item.type === 'history-end'}}" class="history-divider">
+        <view class="history-divider-line"></view>
+        <text class="history-divider-text">以上为历史记录</text>
+        <view class="history-divider-line"></view>
+      </view>
+
+      <!-- 用户消息 -->
+      <view  wx:if="{{item.role === 'user'}}" class="bubble-row right" id="msg-{{item.id}}">
+        <view class="avatar user-avatar-icon">
+          <image wx:if="{{avatarUrl}}" class="avatar-img" src="{{avatarUrl}}" mode="aspectFill"></image>
+          <text wx:else>👤</text>
+        </view>
+        <view class="bubble-content">
+
+          <!-- 文字消息 -->
+          <view wx:if="{{item.type === 'text'}}" class="bubble user-bubble">
+            <text>{{item.text}}</text>
+          </view>
+
+          <!-- 图片消息 -->
+          <view wx:if="{{item.type === 'image'}}" class="img-bubble">
+            <image
+              class="food-image"
+              src="{{item.imagePath}}"
+              mode="aspectFill"
+              bindtap="previewImage"
+              data-src="{{item.imagePath}}"
+            ></image>
+            <!-- 上传中遮罩 -->
+            <view wx:if="{{item.uploading}}" class="img-uploading-mask">
+              <view class="img-spinner"></view>
+              <text class="img-uploading-text">识别中…</text>
+            </view>
+            <!-- 识别到的食物名 -->
+            <view wx:if="{{item.caption}}" class="img-overlay">
+              <text>{{item.caption}}</text>
+            </view>
+            <!-- 上传失败标记 -->
+            <view wx:if="{{item.uploadFailed}}" class="img-fail-badge">
+              <text>!</text>
+            </view>
+          </view>
+
+        </view>
+        
+      </view>
+
+    </block>
+
+    <!-- 底部留白让最后一条消息可见 -->
+    <view class="chat-bottom" id="chat-bottom"></view>
+  </scroll-view>
+
+  <!-- 底部输入栏：fixed + bottom=键盘高度，避免再叠一层流式占位导致「双层空白」 -->
+  <view class="chat-input-bar" style="bottom: {{keyboardHeight}}px;">
+    <view class="chat-input-wrap">
+      <image class="input-camera-btn" src="/assets/icons/img.png" mode="aspectFill" ontap="chooseImage"></image>
+      <input
+        class="chat-input"
+        placeholder="描述你吃了什么…"
+        placeholder-class="chat-input-placeholder"
+        value="{{inputText}}"
+        bindinput="onInputChange"
+        bindconfirm="sendMessage"
+        confirm-type="send"
+        adjust-position="{{false}}"
+        cursor-spacing="12"
+        bindkeyboardheightchange="onKeyboardHeightChange"
+        bindblur="onInputBlur"
+      />
+    </view>
+    <image class="chat-btn" src="/assets/icons/send.png" mode="aspectFill" ontap="sendMessage"></image>
+  </view>
+
+</view>

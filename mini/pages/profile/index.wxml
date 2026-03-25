@@ -1,0 +1,198 @@
+<view class="page profile-page">
+  <scroll-view
+    class="profile-scroll"
+    scroll-y
+    enhanced="{{true}}"
+    bounces="{{false}}"
+    show-scrollbar="{{false}}"
+  >
+  <view class="profile-scroll-inner">
+  <!-- 个人区：头像 + 信息 + 档案标签 -->
+  <view class="profile-hero">
+    <view class="profile-hero-avatar-wrap" bindtap="onTapAvatar">
+      <image wx:if="{{avatarUrl}}" class="profile-hero-avatar" src="{{avatarUrl}}" mode="aspectFill"></image>
+      <view wx:else class="profile-hero-avatar profile-hero-avatar--placeholder">
+        <image class="profile-hero-avatar-placeholder-icon" src="/assets/icons/mine.png" mode="aspectFit"></image>
+      </view>
+    </view>
+
+    <view class="profile-hero-main">
+      <block wx:if="{{hasLogin}}">
+        <view class="profile-hero-name-wrap" bindtap="onTapName">
+          <text class="profile-hero-name">{{nickName || '点击登录'}}</text>
+          <text class="profile-hero-name-hint"> ›</text>
+        </view>
+
+        <block wx:if="{{hasHealthProfile}}">
+          <view class="profile-tag profile-tag--compact">
+            <text class="profile-tag-emoji">{{profileTagEmoji}}</text>
+            <text class="profile-tag-text">{{profileTagText}}</text>
+          </view>
+          <view class="profile-meta-compact">
+            <text class="profile-meta-compact-main">{{profileLine1}}</text>
+            <text wx:if="{{profileLine2}}" class="profile-meta-compact-main"> · {{profileLine2}}</text>
+          </view>
+        </block>
+
+        <block wx:else>
+          <view class="profile-tag profile-tag--muted">
+            <text class="profile-tag-text">暂未建立健康档案</text>
+          </view>
+          <text class="profile-hint">在「饮食」里发送身高体重等信息即可生成计划</text>
+        </block>
+      </block>
+
+      <view wx:else class="profile-hero-guest">
+        <view class="profile-hero-guest-text">
+          <view class="profile-hero-name-wrap" bindtap="onTapName">
+            <text class="profile-hero-name">{{nickName || '点击登录'}}</text>
+          </view>
+          <text class="profile-hint">登录后可同步档案与今日饮食数据</text>
+        </view>
+        <button class="profile-login-btn" bindtap="openLoginSheet">微信登录</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 今日数据 -->
+  <view class="today-panel">
+    <view class="today-panel-bg"></view>
+    <view class="today-panel-inner">
+      <view class="today-header">
+        <view class="today-title-wrap">
+          <text class="today-title">今日数据</text>
+          <text class="today-date">{{todayShort}}</text>
+        </view>
+        <view class="behavior-pill">
+          <text class="behavior-pill-emoji">{{behaviorEmoji}}</text>
+          <text class="behavior-pill-text">{{behaviorTag}}</text>
+        </view>
+      </view>
+
+      <view class="today-kcal-block">
+        <view class="today-kcal-left">
+          <text class="today-kcal-num">{{dailyIntake}}</text>
+          <text class="today-kcal-unit">kcal</text>
+        </view>
+        <view class="today-kcal-divider"></view>
+        <view class="today-kcal-right">
+          <text class="today-target-label">今日目标</text>
+          <text class="today-target-val">{{targetCalories}} kcal</text>
+        </view>
+      </view>
+
+      <view class="today-bar-wrap">
+        <view class="today-bar-track">
+          <view class="today-bar-fill" style="width: {{caloriePercent}}%;"></view>
+        </view>
+        <view class="today-bar-meta">
+          <text class="today-bar-pct">已完成 {{caloriePercent}}%</text>
+          <text wx:if="{{mealCount > 0}}" class="today-meals">已记录 {{mealCount}} 餐</text>
+        </view>
+      </view>
+
+      <view class="today-detail-card">
+        <view class="today-detail-head">
+          <text class="today-detail-title">今日吃了什么</text>
+          <text wx:if="{{todayMeals.length > 0}}" class="today-detail-badge">{{todayMeals.length}} 条</text>
+        </view>
+        <view wx:if="{{todayMeals.length === 0}}" class="today-detail-empty">
+          <text>暂无已确认的饮食记录</text>
+          <text class="today-detail-empty-sub">在聊天里确认记录后会同步到这里</text>
+        </view>
+        <block wx:else>
+          <view class="eat-list-compact">
+            <view wx:for="{{todayMeals}}" wx:key="mealId" class="eat-row">
+              <text class="eat-pill">{{item.mealType}}</text>
+              <text class="eat-line">{{item.displayLine}}</text>
+              <text class="eat-kcal-mini">{{item.calories}} kcal</text>
+            </view>
+          </view>
+        </block>
+      </view>
+
+      <view class="today-detail-card today-detail-card--nut">
+        <view class="today-detail-head">
+          <text class="today-detail-title">今日营养进度</text>
+          <text wx:if="{{!hasNutritionProfile}}" class="today-target-tip">默认目标</text>
+          <text wx:else class="today-target-tip today-target-tip--ok">档案目标</text>
+        </view>
+        <block wx:for="{{nutritionMetrics}}" wx:key="key">
+          <view class="nut-row">
+            <view class="nut-row-top">
+              <text class="nut-label">{{item.label}}</text>
+              <text class="nut-val">{{item.current}} / {{item.target}} {{item.unit}}</text>
+            </view>
+            <view class="nut-bar-track">
+              <view
+                class="nut-bar-fill nut-bar-fill--{{item.key}}"
+                style="width: {{item.barPercent}}%;"
+              ></view>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
+  </view>
+  </scroll-view>
+
+  <!-- 登录 / 设置弹窗：须用 root-portal 才能盖住原生 tabBar（普通节点 z-index 无效） -->
+  <root-portal wx:if="{{showSheet}}">
+    <view class="sheet-portal-stack">
+      <view class="sheet-mask" bindtap="closeLoginSheet"></view>
+      <view class="sheet sheet-show">
+        <view class="sheet-handle"></view>
+        <view class="sheet-title">完善个人资料</view>
+        <view class="sheet-subtitle">头像和昵称将从微信同步，点击一下即可</view>
+
+        <view class="sheet-avatar-wrap">
+          <button class="sheet-avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+            <image wx:if="{{draftAvatarUrl}}" class="sheet-avatar-img" src="{{draftAvatarUrl}}" mode="aspectFill"></image>
+            <view wx:else class="sheet-avatar-placeholder">
+              <image class="sheet-avatar-placeholder-icon" src="/assets/icons/mine.png" mode="aspectFit"></image>
+              <text class="sheet-avatar-tip">点击选择</text>
+            </view>
+          </button>
+        </view>
+
+        <view class="sheet-field">
+          <view class="sheet-field-head">
+            <text class="sheet-field-title">昵称</text>
+            <text class="sheet-field-desc">点输入框可选用微信昵称，也可直接输入</text>
+          </view>
+          <view class="sheet-input-shell">
+            <input
+              class="sheet-nickname-input"
+              type="nickname"
+              placeholder="选用微信昵称或手动输入"
+              placeholder-class="sheet-nickname-placeholder"
+              value="{{draftNickName}}"
+              cursor-spacing="80"
+              confirm-type="done"
+              adjust-position="{{true}}"
+              bindinput="onDraftNicknameInput"
+            />
+          </view>
+        </view>
+
+        <button class="sheet-confirm-btn" bindtap="confirmLogin">完成登录</button>
+        <button class="sheet-cancel-btn" bindtap="closeLoginSheet">取消</button>
+      </view>
+    </view>
+  </root-portal>
+
+  <root-portal wx:if="{{showSettingsSheet}}">
+    <view class="sheet-portal-stack">
+      <view class="sheet-mask sheet-mask--over" bindtap="closeSettingsSheet"></view>
+      <view class="sheet sheet--over sheet-show">
+        <view class="sheet-handle"></view>
+        <view class="sheet-title">{{nickName || '账号'}}</view>
+        <view class="sheet-subtitle sheet-subtitle--left">已登录微信账号</view>
+        <button class="sheet-logout-btn" bindtap="doLogout">退出登录</button>
+        <button class="sheet-cancel-btn" bindtap="closeSettingsSheet">取消</button>
+      </view>
+    </view>
+  </root-portal>
+
+</view>

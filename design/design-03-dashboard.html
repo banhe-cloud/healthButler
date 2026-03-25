@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>西兰花 — 03 数据报表</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+      background: #f0f4f0; min-height: 100vh;
+      padding: 40px 24px 80px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+
+    /* NAV */
+    .page-nav {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 40px;
+      background: #fff; padding: 10px 20px; border-radius: 40px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+    .nav-brand { font-size: 15px; font-weight: 800; color: #27ae60; margin-right: 8px; }
+    .nav-link { padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #6c757d; text-decoration: none; }
+    .nav-link.active { background: #d5f5e3; color: #27ae60; }
+
+    /* PAGE TITLE */
+    .page-title { text-align: center; margin-bottom: 40px; }
+    .page-title .label { display: inline-block; background: #d5f5e3; color: #27ae60; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; text-transform: uppercase; }
+    .page-title h1 { font-size: 26px; font-weight: 800; color: #1a1a1a; }
+    .page-title p  { margin-top: 6px; font-size: 14px; color: #888; }
+
+    /* PHONE */
+    .phone {
+      width: 375px; min-height: 812px; border-radius: 44px;
+      box-shadow: 0 0 0 10px #1a1a1a, 0 0 0 12px #3a3a3a, 0 30px 80px rgba(0,0,0,0.35);
+      overflow: hidden; display: flex; flex-direction: column;
+      background: #f8f9fa;
+    }
+
+    /* STATUS BAR */
+    .status-bar { height: 44px; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 24px 0 20px; flex-shrink: 0; }
+    .status-bar .time { font-size: 15px; font-weight: 600; color: #212529; }
+    .status-bar .icons { display: flex; gap: 6px; align-items: center; }
+    .status-bar .icons svg { width: 16px; height: 16px; }
+
+    /* TOKENS */
+    :root {
+      --green:    #2ecc71;
+      --green-dk: #27ae60;
+      --green-lt: #d5f5e3;
+      --orange:   #f39c12;
+      --red:      #e74c3c;
+      --blue:     #3498db;
+      --purple:   #9b59b6;
+      --gray1:    #f8f9fa;
+      --gray2:    #e9ecef;
+      --text:     #212529;
+      --text2:    #495057;
+      --text3:    #6c757d;
+    }
+
+    /* DASH HEADER */
+    .dash-header { background: #fff; padding: 0 20px 16px; border-bottom: 1px solid var(--gray2); }
+    .dash-header-row { display: flex; align-items: center; justify-content: space-between; }
+    .dash-header h2 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .period-tabs { display: flex; gap: 4px; }
+    .period-tab { padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text3); cursor: pointer; }
+    .period-tab.active { background: var(--green-lt); color: var(--green-dk); }
+
+    /* BODY */
+    .dash-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* SUMMARY CARDS */
+    .summary-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .sum-card { background: #fff; border-radius: 16px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+    .sc-icon  { font-size: 22px; margin-bottom: 6px; }
+    .sc-val   { font-size: 22px; font-weight: 800; color: var(--text); }
+    .sc-unit  { font-size: 12px; font-weight: 400; color: var(--text3); margin-left: 2px; }
+    .sc-lbl   { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .sc-delta { font-size: 12px; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 2px; }
+    .sc-delta.down { color: var(--green-dk); }
+
+    /* CHART CARD */
+    .chart-card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+    .cc-header  { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .cc-title   { font-size: 15px; font-weight: 700; color: var(--text); }
+    .cc-sub     { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .legend     { display: flex; gap: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text3); }
+    .legend-dot  { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* WEIGHT SVG */
+    .weight-svg { width: 100%; height: 110px; }
+
+    /* BAR CHART */
+    .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
+    .bar-col   { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .bar-outer { width: 100%; background: var(--gray1); border-radius: 6px 6px 0 0; position: relative; flex: 1; display: flex; align-items: flex-end; }
+    .bar-inner { width: 100%; border-radius: 6px 6px 0 0; }
+    .bar-lbl   { font-size: 10px; color: var(--text3); }
+
+    /* MACRO DONUT */
+    .macro-wrap { display: flex; align-items: center; gap: 16px; }
+    .donut-svg  { width: 100px; height: 100px; flex-shrink: 0; }
+    .macro-list { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .macro-item { display: flex; align-items: center; gap: 8px; }
+    .macro-bar-bg { flex: 1; height: 6px; background: var(--gray2); border-radius: 3px; overflow: hidden; }
+    .macro-bar    { height: 100%; border-radius: 3px; }
+    .macro-lbl    { font-size: 12px; color: var(--text2); font-weight: 600; width: 28px; }
+    .macro-pct    { font-size: 12px; color: var(--text3); width: 34px; text-align: right; }
+
+    /* BADGES */
+    .badge-row { display: flex; gap: 10px; }
+    .badge { flex: 1; background: #fff; border-radius: 14px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+    .b-icon { font-size: 26px; }
+    .b-name { font-size: 11px; font-weight: 600; color: var(--text2); text-align: center; }
+    .badge.locked { opacity: .4; }
+
+    /* AI SUGGESTION */
+    .suggestion-card { background: linear-gradient(135deg, #667eea22, #764ba211); border: 1px solid #c9b8f0; border-radius: 16px; padding: 16px; }
+    .sg-header { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .sg-icon   { font-size: 24px; }
+    .sg-title  { font-size: 14px; font-weight: 700; color: #5a3d9a; }
+    .sg-sub    { font-size: 12px; color: var(--text3); }
+    .suggestion-card ul { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+    .suggestion-card li { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+    /* TAB BAR */
+    .tab-bar  { background: #fff; border-top: 1px solid var(--gray2); display: flex; padding: 8px 0 20px; }
+    .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--text3); cursor: pointer; padding: 4px 0; }
+    .tab-item.active { color: var(--green-dk); }
+    .tab-icon { font-size: 22px; }
+    .tab-dot  { width: 4px; height: 4px; border-radius: 50%; background: var(--green-dk); }
+
+    /* ANNOTATION */
+    .annotation-panel { margin-top: 40px; width: 375px; background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,.06); }
+    .annotation-panel h3 { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 16px; border-bottom: 1px solid var(--gray2); padding-bottom: 10px; }
+    .ann-item { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
+    .ann-num  { width: 22px; height: 22px; border-radius: 50%; background: var(--green-lt); color: var(--green-dk); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .ann-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+    .ann-text strong { color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <nav class="page-nav">
+    <span class="nav-brand">🥦 西兰花</span>
+    <a class="nav-link" href="design-01-onboarding.html">01 新用户引导</a>
+    <a class="nav-link" href="design-02-ai-chat.html">02 AI 饮食记录</a>
+    <a class="nav-link active" href="design-03-dashboard.html">03 数据报表</a>
+  </nav>
+
+  <div class="page-title">
+    <div class="label">Screen 03 / 03</div>
+    <h1>数据报表</h1>
+    <p>月度/半年体重趋势、热量统计、营养分布与 AI 建议</p>
+  </div>
+
+  <div class="phone">
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="icons">
+        <svg viewBox="0 0 24 24" fill="#212529"><rect x="1" y="6" width="6" height="12" rx="1"/><rect x="9" y="3" width="6" height="15" rx="1"/><rect x="17" y="1" width="6" height="17" rx="1"/></svg>
+        <svg viewBox="0 0 24 24" fill="#212529"><rect x="2" y="7" width="18" height="11" rx="2"/><path d="M22 11v3" stroke="#212529" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+
+    <div class="dash-header">
+      <div class="dash-header-row">
+        <h2>健康报表</h2>
+        <div class="period-tabs">
+          <div class="period-tab">周</div>
+          <div class="period-tab active">月</div>
+          <div class="period-tab">半年</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-body">
+
+      <!-- Summary -->
+      <div class="summary-cards">
+        <div class="sum-card">
+          <div class="sc-icon">⚖️</div>
+          <div><span class="sc-val">73.2</span><span class="sc-unit">kg</span></div>
+          <div class="sc-lbl">当前体重</div>
+          <div class="sc-delta down">▼ 4.8kg · 本月</div>
+        </div>
+        <div class="sum-card">
+          <div class="sc-icon">🔥</div>
+          <div><span class="sc-val">1,640</span><span class="sc-unit">kcal</span></div>
+          <div class="sc-lbl">日均摄入</div>
+          <div class="sc-delta down">▼ 目标达成 91%</div>
+        </div>
+        <div class="sum-card">
+          <div class="sc-icon">🥗</div>
+          <div><span class="sc-val">28</span><span class="sc-unit">天</span></div>
+          <div class="sc-lbl">记录天数</div>
+          <div class="sc-delta" style="color:var(--blue)">🔥 连续 12 天</div>
+        </div>
+        <div class="sum-card">
+          <div class="sc-icon">💪</div>
+          <div><span class="sc-val">86</span><span class="sc-unit">分</span></div>
+          <div class="sc-lbl">饮食健康评分</div>
+          <div class="sc-delta" style="color:var(--green-dk)">▲ +8 较上月</div>
+        </div>
+      </div>
+
+      <!-- Weight Trend -->
+      <div class="chart-card">
+        <div class="cc-header">
+          <div>
+            <div class="cc-title">体重变化趋势</div>
+            <div class="cc-sub">近30天 · 单位 kg</div>
+          </div>
+          <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--green-dk)"></div>实际</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--blue);opacity:.5"></div>目标</div>
+          </div>
+        </div>
+        <svg class="weight-svg" viewBox="0 0 327 110" fill="none">
+          <line x1="0" y1="90" x2="327" y2="90" stroke="#e9ecef" stroke-width="1"/>
+          <line x1="0" y1="60" x2="327" y2="60" stroke="#e9ecef" stroke-width="1"/>
+          <line x1="0" y1="30" x2="327" y2="30" stroke="#e9ecef" stroke-width="1"/>
+          <text x="0" y="94" font-size="9" fill="#adb5bd">74</text>
+          <text x="0" y="64" font-size="9" fill="#adb5bd">76</text>
+          <text x="0" y="34" font-size="9" fill="#adb5bd">78</text>
+          <path d="M16 55 L327 40" stroke="#3498db" stroke-width="1.5" stroke-dasharray="5 3" opacity=".5"/>
+          <defs>
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#2ecc71" stop-opacity=".25"/>
+              <stop offset="100%" stop-color="#2ecc71" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M16 82 C30 80 50 78 70 76 C90 74 110 74 130 71 C150 68 165 66 185 63 C205 60 225 57 250 54 C270 52 290 50 311 47 L311 90 L16 90 Z" fill="url(#areaGrad)"/>
+          <path d="M16 82 C30 80 50 78 70 76 C90 74 110 74 130 71 C150 68 165 66 185 63 C205 60 225 57 250 54 C270 52 290 50 311 47" stroke="#27ae60" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="16"  cy="82" r="4" fill="#27ae60"/>
+          <circle cx="130" cy="71" r="4" fill="#27ae60"/>
+          <circle cx="311" cy="47" r="5" fill="#27ae60" stroke="#fff" stroke-width="2"/>
+          <rect x="270" y="18" width="56" height="22" rx="6" fill="#27ae60"/>
+          <text x="298" y="33" font-size="10" fill="white" text-anchor="middle" font-weight="bold">73.2 kg</text>
+          <line x1="311" y1="47" x2="311" y2="40" stroke="#27ae60" stroke-width="1.5" stroke-dasharray="3 2"/>
+        </svg>
+      </div>
+
+      <!-- Calorie bar chart -->
+      <div class="chart-card">
+        <div class="cc-header">
+          <div>
+            <div class="cc-title">近7日热量摄入</div>
+            <div class="cc-sub">目标线：1,800 kcal</div>
+          </div>
+        </div>
+        <div style="position:relative;height:90px;">
+          <div style="position:absolute;top:5%;left:0;right:0;border-top:1.5px dashed var(--orange);"></div>
+          <div style="position:absolute;top:0;right:0;font-size:10px;color:var(--orange);background:#fff;padding:0 4px;">目标</div>
+          <div class="bar-chart">
+            <div class="bar-col"><div class="bar-outer"><div class="bar-inner" style="height:72%;background:linear-gradient(to top,var(--green),#a8e6cf)"></div></div><div class="bar-lbl">周一</div></div>
+            <div class="bar-col"><div class="bar-outer"><div class="bar-inner" style="height:85%;background:linear-gradient(to top,var(--orange),#ffd89b)"></div></div><div class="bar-lbl">周二</div></div>
+            <div class="bar-col"><div class="bar-outer"><div class="bar-inner" style="height:68%;background:linear-gradient(to top,var(--green),#a8e6cf)"></div></div><div class="bar-lbl">周三</div></div>
+            <div class="bar-col"><div class="bar-outer"><div class="bar-inner" style="height:90%;background:linear-gradient(to top,var(--red),#ffb3b3)"></div></div><div class="bar-lbl">周四</div></div>
+            <div class="bar-col"><div class="bar-outer"><div class="bar-inner" style="height:75%;background:linear-gradient(to top,var(--green),#a8e6cf)"></div></div><div class="bar-lbl">周五</div></div>
+            <div class="bar-col"><div class="bar-outer"><div class="bar-inner" style="height:60%;background:linear-gradient(to top,var(--green),#a8e6cf)"></div></div><div class="bar-lbl">周六</div></div>
+            <div class="bar-col"><div class="bar-outer"><div class="bar-inner" style="height:70%;background:linear-gradient(to top,var(--green),#a8e6cf)"></div></div><div class="bar-lbl">周日</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Macro donut -->
+      <div class="chart-card">
+        <div class="cc-header">
+          <div class="cc-title">营养素分布</div>
+          <div class="cc-sub">本月平均</div>
+        </div>
+        <div class="macro-wrap">
+          <svg class="donut-svg" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#f0f0f0" stroke-width="14"/>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#3498db" stroke-width="14" stroke-dasharray="124 239" stroke-dashoffset="-60" stroke-linecap="round"/>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#9b59b6" stroke-width="14" stroke-dasharray="67 239" stroke-dashoffset="-184" stroke-linecap="round"/>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#f39c12" stroke-width="14" stroke-dasharray="48 239" stroke-dashoffset="-251" stroke-linecap="round"/>
+            <text x="50" y="46" text-anchor="middle" font-size="11" font-weight="700" fill="#212529">均衡</text>
+            <text x="50" y="58" text-anchor="middle" font-size="9" fill="#868e96">评分 86</text>
+          </svg>
+          <div class="macro-list">
+            <div class="macro-item">
+              <span class="macro-lbl">碳水</span>
+              <div class="macro-bar-bg"><div class="macro-bar" style="width:52%;background:#3498db"></div></div>
+              <span class="macro-pct" style="color:#3498db">52%</span>
+            </div>
+            <div class="macro-item">
+              <span class="macro-lbl">蛋白</span>
+              <div class="macro-bar-bg"><div class="macro-bar" style="width:28%;background:#9b59b6"></div></div>
+              <span class="macro-pct" style="color:#9b59b6">28%</span>
+            </div>
+            <div class="macro-item">
+              <span class="macro-lbl">脂肪</span>
+              <div class="macro-bar-bg"><div class="macro-bar" style="width:20%;background:#f39c12"></div></div>
+              <span class="macro-pct" style="color:#f39c12">20%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Achievements -->
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;">🏆 成就徽章</div>
+        <div class="badge-row">
+          <div class="badge"><div class="b-icon">🔥</div><div class="b-name">打卡 7 天</div></div>
+          <div class="badge"><div class="b-icon">⚖️</div><div class="b-name">减重 5kg</div></div>
+          <div class="badge locked"><div class="b-icon">🏃</div><div class="b-name">运动达人</div></div>
+          <div class="badge locked"><div class="b-icon">🥇</div><div class="b-name">目标达成</div></div>
+        </div>
+      </div>
+
+      <!-- AI Suggestion -->
+      <div class="suggestion-card">
+        <div class="sg-header">
+          <div class="sg-icon">✨</div>
+          <div>
+            <div class="sg-title">AI 月度建议</div>
+            <div class="sg-sub">基于你本月的饮食数据生成</div>
+          </div>
+        </div>
+        <ul>
+          <li>本月蛋白质摄入偏低，建议增加鸡蛋、豆腐等优质蛋白 🥚</li>
+          <li>周四热量超标，通常是晚餐时间，尝试控制夜宵 🌙</li>
+          <li>减重趋势良好！保持当前饮食节奏，预计下月再减 3kg 💪</li>
+        </ul>
+      </div>
+
+      <div style="height:4px"></div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab-item"><div class="tab-icon">🏠</div><span>首页</span></div>
+      <div class="tab-item"><div class="tab-icon">💬</div><span>饮食</span></div>
+      <div class="tab-item active"><div class="tab-icon">📊</div><div class="tab-dot"></div><span>报表</span></div>
+      <div class="tab-item"><div class="tab-icon">👤</div><span>我的</span></div>
+    </div>
+  </div>
+
+  <div class="annotation-panel">
+    <h3>📝 设计说明</h3>
+    <div class="ann-item">
+      <div class="ann-num">1</div>
+      <div class="ann-text"><strong>周期切换：</strong>顶部 Tabs 支持「周 / 月 / 半年」切换，数据与图表联动更新</div>
+    </div>
+    <div class="ann-item">
+      <div class="ann-num">2</div>
+      <div class="ann-text"><strong>4 项核心指标：</strong>体重、日均热量、记录天数、饮食评分，一屏掌握核心数据</div>
+    </div>
+    <div class="ann-item">
+      <div class="ann-num">3</div>
+      <div class="ann-text"><strong>体重折线图：</strong>渐变面积图展示下降趋势，蓝色虚线为 AI 规划目标线，最新数据 Tooltip 高亮</div>
+    </div>
+    <div class="ann-item">
+      <div class="ann-num">4</div>
+      <div class="ann-text"><strong>热量柱状图：</strong>超标（红）/ 接近目标（橙）/ 达标（绿）三色区分，橙色虚线为目标线</div>
+    </div>
+    <div class="ann-item">
+      <div class="ann-num">5</div>
+      <div class="ann-text"><strong>成就徽章：</strong>已解锁徽章正常显示，未解锁置灰，增加打卡动力与趣味性</div>
+    </div>
+    <div class="ann-item">
+      <div class="ann-num">6</div>
+      <div class="ann-text"><strong>AI 月度建议：</strong>基于真实饮食数据生成 3 条个性化建议，紫色卡片区别于普通数据模块</div>
+    </div>
+  </div>
+
+</body>
+</html>

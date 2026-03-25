@@ -1,0 +1,8 @@
+# 忽略所有环境变量密钥文件（绝对不能上传GitHub）
+.env
+.env.*
+!.env.example
+
+# 忽略你这个项目里的敏感文档
+env.md
+/server/.env

@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HealthEat - 设计稿</title>
+  <style>
+    /* =========================================
+       RESET & BASE
+    ========================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+      background: #f0f4f0;
+      min-height: 100vh;
+      padding: 40px 24px 80px;
+    }
+
+    /* =========================================
+       HEADER
+    ========================================= */
+    .page-title {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .page-title h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: -0.5px;
+    }
+    .page-title p {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #888;
+    }
+
+    /* =========================================
+       SCREEN GALLERY
+    ========================================= */
+    .gallery {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    /* =========================================
+       PHONE FRAME
+    ========================================= */
+    .phone-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .phone-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .phone {
+      width: 375px;
+      min-height: 812px;
+      background: #fff;
+      border-radius: 44px;
+      box-shadow:
+        0 0 0 10px #1a1a1a,
+        0 0 0 12px #3a3a3a,
+        0 30px 80px rgba(0,0,0,0.35);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      height: 44px;
+      background: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px 0 20px;
+      flex-shrink: 0;
+    }
+    .status-bar .time { font-size: 15px; font-weight: 600; color: inherit; }
+    .status-bar .icons { display: flex; gap: 6px; align-items: center; }
+    .status-bar .icons svg { width: 16px; height: 16px; }
+
+    /* =========================================
+       COLORS / TOKENS
+    ========================================= */
+    :root {
+      --green:    #2ecc71;
+      --green-dk: #27ae60;
+      --green-lt: #d5f5e3;
+      --orange:   #f39c12;
+      --red:      #e74c3c;
+      --blue:     #3498db;
+      --purple:   #9b59b6;
+      --gray1:    #f8f9fa;
+      --gray2:    #e9ecef;
+      --gray3:    #ced4da;
+      --gray4:    #868e96;
+      --text:     #212529;
+      --text2:    #495057;
+      --text3:    #6c757d;
+    }
+
+    /* =========================================
+       SCREEN 1 — ONBOARDING
+    ========================================= */
+    .s1 { background: linear-gradient(160deg, #1a2a1a 0%, #2d5a27 60%, #3d8b37 100%); color: #fff; }
+    .s1 .status-bar { color: #fff; }
+    .s1 .status-bar .time { color: #fff; }
+
+    .s1-hero {
+      padding: 20px 32px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .s1-logo {
+      width: 72px; height: 72px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .s1-hero h2 { font-size: 26px; font-weight: 700; }
+    .s1-hero p  { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 6px; }
+
+    /* Step indicator */
+    .step-bar {
+      display: flex; gap: 8px; justify-content: center; padding: 0 32px 24px;
+    }
+    .step-dot {
+      height: 4px; border-radius: 2px; transition: all .3s;
+    }
+    .step-dot.active  { width: 28px; background: #fff; }
+    .step-dot.done    { width: 16px; background: rgba(255,255,255,0.6); }
+    .step-dot.pending { width: 16px; background: rgba(255,255,255,0.25); }
+
+    /* Form card */
+    .s1-card {
+      flex: 1;
+      background: #fff;
+      border-radius: 28px 28px 0 0;
+      padding: 32px 24px 32px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+    .s1-card .card-title { font-size: 18px; font-weight: 700; color: var(--text); }
+    .s1-card .card-sub   { font-size: 13px; color: var(--text3); margin-top: 2px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: var(--text2); }
+    .form-input {
+      height: 48px;
+      border: 1.5px solid var(--gray2);
+      border-radius: 12px;
+      padding: 0 16px;
+      font-size: 15px;
+      color: var(--text);
+      background: var(--gray1);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .form-input.filled { border-color: var(--green); background: #f0faf4; }
+    .form-input span { color: var(--text3); font-size: 13px; }
+    .form-input strong { margin-left: auto; font-size: 15px; color: var(--text); }
+
+    /* Slider visual */
+    .slider-row {
+      display: flex; align-items: center; gap: 10px; margin-top: -4px;
+    }
+    .slider-track {
+      flex: 1; height: 6px; background: var(--gray2); border-radius: 3px; position: relative;
+    }
+    .slider-fill {
+      position: absolute; left: 0; top: 0; height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, var(--green), var(--green-dk));
+    }
+    .slider-thumb {
+      width: 20px; height: 20px; background: #fff; border: 2px solid var(--green-dk);
+      border-radius: 50%; position: absolute; top: -7px;
+      box-shadow: 0 2px 8px rgba(39,174,96,.3);
+    }
+    .slider-label { font-size: 13px; color: var(--text3); width: 28px; text-align: right; }
+
+    /* Tag chips */
+    .tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag {
+      padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;
+      border: 1.5px solid var(--gray2); color: var(--text2); cursor: pointer;
+    }
+    .tag.selected { background: var(--green-lt); border-color: var(--green); color: var(--green-dk); }
+    .tag.warn.selected { background: #fef9e7; border-color: var(--orange); color: #e67e22; }
+
+    /* CTA */
+    .btn-primary {
+      height: 52px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--green), var(--green-dk));
+      color: #fff; font-size: 16px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 8px 20px rgba(39,174,96,.3);
+      cursor: pointer; margin-top: auto;
+    }
+
+    /* =========================================
+       SCREEN 2 — AI CHAT
+    ========================================= */
+    .s2 { background: var(--gray1); }
+    .s2 .status-bar { background: #fff; }
+
+    .nav-bar {
+      background: #fff;
+      padding: 0 20px 16px;
+      border-bottom: 1px solid var(--gray2);
+    }
+    .nav-bar h2 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .nav-bar p  { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+    /* Date chip */
+    .date-chip {
+      text-align: center; padding: 12px 0 4px;
+      font-size: 12px; color: var(--text3);
+    }
+    .date-chip span {
+      background: var(--gray2); padding: 3px 12px; border-radius: 10px;
+    }
+
+    /* Chat bubbles */
+    .chat-area { flex: 1; padding: 8px 16px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+    .bubble-row { display: flex; gap: 10px; align-items: flex-end; }
+    .bubble-row.right { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; background: var(--green-lt);
+    }
+    .avatar.ai { background: linear-gradient(135deg, #667eea, #764ba2); font-size: 16px; }
+
+    .bubble {
+      max-width: 240px; padding: 12px 14px; border-radius: 18px;
+      font-size: 14px; line-height: 1.6; color: var(--text);
+    }
+    .bubble.ai-bubble {
+      background: #fff; border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .bubble.user-bubble {
+      background: linear-gradient(135deg, var(--green), var(--green-dk));
+      color: #fff; border-bottom-right-radius: 4px;
+    }
+
+    /* Nutrition card inside bubble */
+    .nutrition-card {
+      background: linear-gradient(135deg, #f8fff9, #eafaf1);
+      border: 1px solid #c3e6cb;
+      border-radius: 14px; padding: 14px; margin-top: 6px;
+      width: 240px;
+    }
+    .nutrition-card .food-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+    .nut-row { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .nut-item {
+      flex: 1; background: #fff; border-radius: 10px; padding: 8px 6px;
+      text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+    .nut-item .nut-val { font-size: 16px; font-weight: 700; color: var(--green-dk); }
+    .nut-item .nut-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; }
+    .calorie-bar-wrap { margin-top: 6px; }
+    .calorie-bar-wrap .lbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--text3); margin-bottom: 4px; }
+    .calorie-bar { height: 8px; background: var(--gray2); border-radius: 4px; overflow: hidden; }
+    .calorie-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--green), var(--orange)); }
+
+    /* Food image bubble */
+    .img-bubble {
+      width: 160px; height: 120px; border-radius: 14px; overflow: hidden;
+      position: relative;
+    }
+    .img-bubble .img-placeholder {
+      width: 100%; height: 100%;
+      background: linear-gradient(135deg, #c8e6c9, #a5d6a7);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px;
+    }
+    .img-bubble .img-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,.5));
+      padding: 8px 10px;
+      font-size: 12px; color: #fff; font-weight: 500;
+    }
+
+    /* Tab bar */
+    .tab-bar {
+      background: #fff; border-top: 1px solid var(--gray2);
+      display: flex; padding: 8px 0 20px;
+    }
+    .tab-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+      font-size: 10px; color: var(--text3); cursor: pointer; padding: 4px 0;
+    }
+    .tab-item.active { color: var(--green-dk); }
+    .tab-item .tab-icon { font-size: 22px; }
+    .tab-item .tab-dot {
+      width: 4px; height: 4px; border-radius: 50%; background: var(--green-dk);
+    }
+
+    /* Chat input */
+    .chat-input-bar {
+      background: #fff; border-top: 1px solid var(--gray2);
+      padding: 10px 16px 10px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .chat-input {
+      flex: 1; height: 40px; background: var(--gray1);
+      border: 1px solid var(--gray2); border-radius: 20px;
+      padding: 0 16px; font-size: 14px; color: var(--text);
+      display: flex; align-items: center;
+    }
+    .chat-input span { color: var(--text3); }
+    .chat-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; cursor: pointer;
+    }
+    .chat-btn.camera { background: var(--gray1); border: 1px solid var(--gray2); }
+    .chat-btn.send   { background: linear-gradient(135deg, var(--green), var(--green-dk)); color: #fff; box-shadow: 0 4px 12px rgba(39,174,96,.3); }
+
+    /* AI typing indicator */
+    .typing { display: flex; gap: 4px; align-items: center; padding: 4px 2px; }
+    .typing span {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--gray3);
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
+    }
+
+    /* =========================================
+       SCREEN 3 — DASHBOARD / REPORTS
+    ========================================= */
+    .s3 { background: var(--gray1); }
+    .s3 .status-bar { background: #fff; }
+
+    .dash-header {
+      background: #fff; padding: 0 20px 16px;
+      border-bottom: 1px solid var(--gray2);
+    }
+    .dash-header-row { display: flex; align-items: center; justify-content: space-between; }
+    .dash-header h2 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .period-tabs { display: flex; gap: 4px; }
+    .period-tab {
+      padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      color: var(--text3); cursor: pointer;
+    }
+    .period-tab.active { background: var(--green-lt); color: var(--green-dk); }
+
+    .dash-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* Summary cards */
+    .summary-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .sum-card {
+      background: #fff; border-radius: 16px; padding: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .sum-card .sc-icon { font-size: 22px; margin-bottom: 6px; }
+    .sum-card .sc-val { font-size: 22px; font-weight: 800; color: var(--text); }
+    .sum-card .sc-unit { font-size: 12px; font-weight: 400; color: var(--text3); margin-left: 2px; }
+    .sum-card .sc-lbl { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .sum-card .sc-delta { font-size: 12px; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 2px; }
+    .sc-delta.down { color: var(--green-dk); }
+    .sc-delta.up   { color: var(--red); }
+
+    /* Chart card */
+    .chart-card {
+      background: #fff; border-radius: 16px; padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .chart-card .cc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .chart-card .cc-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .chart-card .cc-sub   { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .legend { display: flex; gap: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text3); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Weight chart (SVG) */
+    .weight-svg { width: 100%; height: 110px; }
+
+    /* Calorie bar chart */
+    .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .bar-col .bar-outer { width: 100%; background: var(--gray1); border-radius: 6px 6px 0 0; position: relative; flex: 1; display: flex; align-items: flex-end; }
+    .bar-col .bar-inner { width: 100%; border-radius: 6px 6px 0 0; }
+    .bar-col .bar-lbl   { font-size: 10px; color: var(--text3); }
+
+    /* Macro donut */
+    .macro-wrap { display: flex; align-items: center; gap: 16px; }
+    .donut-svg { width: 100px; height: 100px; flex-shrink: 0; }
+    .macro-list { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .macro-item { display: flex; align-items: center; gap: 8px; }
+    .macro-item .macro-bar-bg { flex: 1; height: 6px; background: var(--gray2); border-radius: 3px; overflow: hidden; }
+    .macro-item .macro-bar    { height: 100%; border-radius: 3px; }
+    .macro-item .macro-lbl    { font-size: 12px; color: var(--text2); font-weight: 600; width: 28px; }
+    .macro-item .macro-pct    { font-size: 12px; color: var(--text3); width: 34px; text-align: right; }
+
+    /* Achievement badges */
+    .badge-row { display: flex; gap: 10px; }
+    .badge {
+      flex: 1; background: #fff; border-radius: 14px; padding: 12px 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .badge .b-icon { font-size: 26px; }
+    .badge .b-name { font-size: 11px; font-weight: 600; color: var(--text2); text-align: center; }
+    .badge.locked  { opacity: .4; }
+
+    /* AI Suggestion card */
+    .suggestion-card {
+      background: linear-gradient(135deg, #667eea22, #764ba211);
+      border: 1px solid #c9b8f0;
+      border-radius: 16px; padding: 16px;
+    }
+    .suggestion-card .sg-header { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .suggestion-card .sg-icon { font-size: 24px; }
+    .suggestion-card .sg-title { font-size: 14px; font-weight: 700; color: #5a3d9a; }
+    .suggestion-card .sg-sub   { font-size: 12px; color: var(--text3); }
+    .suggestion-card ul { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+    .suggestion-card li { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+    /* =========================================
+       RESPONSIVE: stack on small viewports
+    ========================================= */
+    @media (max-width: 1300px) {
+      .gallery { gap: 28px; }
+      .phone { width: 340px; }
+    }
+    @media (max-width: 800px) {
+      body { padding: 24px 12px 60px; }
+      .phone { width: 100%; max-width: 375px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-title">
+    <h1>🥗 HealthEat — 设计稿</h1>
+    <p>减肥健康管理小程序 · 3 核心页面</p>
+  </div>
+
+  <div class="gallery">
+
+    <!-- ==========================================
+         SCREEN 1: 新用户引导
+    =========================================== -->
+    <div class="phone-wrap">
+      <span class="phone-label">01 · 新用户引导</span>
+      <div class="phone s1">
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">
+            <svg viewBox="0 0 24 24" fill="white"><rect x="1" y="6" width="6" height="12" rx="1"/><rect x="9" y="3" width="6" height="15" rx="1"/><rect x="17" y="1" width="6" height="17" rx="1"/></svg>
+            <svg viewBox="0 0 24 24" fill="white"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 5a10.94 10.94 0 0114 0M10.71 5.05A11 11 0 0122.56 9M1.42 9a11 11 0 014.23-2.06M8.53 16.11a6 6 0 016.95 0M12 20h.01" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 24 24" fill="white"><rect x="2" y="7" width="18" height="11" rx="2"/><path d="M22 11v3" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+
+        <!-- Hero -->
+        <div class="s1-hero">
+          <div class="s1-logo">🥗</div>
+          <h2>告诉我关于你</h2>
+          <p>帮助 AI 为你制定专属减肥方案</p>
+        </div>
+
+        <!-- Steps -->
+        <div class="step-bar">
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+          <div class="step-dot pending"></div>
+          <div class="step-dot pending"></div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="s1-card">
+          <div>
+            <div class="card-title">基本身体信息</div>
+            <div class="card-sub">Step 2 / 4 · 这些数据仅用于热量计算</div>
+          </div>
+
+          <!-- Height slider -->
+          <div class="form-group">
+            <label>身高</label>
+            <div class="form-input filled">
+              <span>📏</span>
+              <strong>172 cm</strong>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label" style="text-align:left;width:32px">140</span>
+              <div class="slider-track">
+                <div class="slider-fill" style="width:64%"></div>
+                <div class="slider-thumb" style="left:calc(64% - 10px)"></div>
+              </div>
+              <span class="slider-label">200</span>
+            </div>
+          </div>
+
+          <!-- Weight -->
+          <div class="form-group">
+            <label>当前体重</label>
+            <div class="form-input filled">
+              <span>⚖️</span>
+              <strong>78 kg</strong>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label" style="text-align:left;width:32px">40</span>
+              <div class="slider-track">
+                <div class="slider-fill" style="width:55%"></div>
+                <div class="slider-thumb" style="left:calc(55% - 10px)"></div>
+              </div>
+              <span class="slider-label">150</span>
+            </div>
+          </div>
+
+          <!-- Goal weight -->
+          <div class="form-group">
+            <label>目标体重</label>
+            <div class="form-input" style="border-color:#dee2e6">
+              <span>🎯</span>
+              <strong style="color:var(--text3)">65 kg</strong>
+            </div>
+          </div>
+
+          <!-- Health conditions -->
+          <div class="form-group">
+            <label>健康状况（可多选）</label>
+            <div class="tag-row">
+              <div class="tag selected">无特殊情况</div>
+              <div class="tag warn">高血压</div>
+              <div class="tag warn">糖尿病</div>
+              <div class="tag warn">高血脂</div>
+              <div class="tag">素食者</div>
+              <div class="tag">食物过敏</div>
+            </div>
+          </div>
+
+          <div class="btn-primary">
+            下一步 →
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SCREEN 2: AI 饮食对话
+    =========================================== -->
+    <div class="phone-wrap">
+      <span class="phone-label">02 · AI 饮食记录</span>
+      <div class="phone s2">
+        <div class="status-bar">
+          <span class="time" style="color:var(--text)">9:41</span>
+          <div class="icons">
+            <svg viewBox="0 0 24 24" fill="#212529"><rect x="1" y="6" width="6" height="12" rx="1"/><rect x="9" y="3" width="6" height="15" rx="1"/><rect x="17" y="1" width="6" height="17" rx="1"/></svg>
+            <svg viewBox="0 0 24 24" fill="#212529"><rect x="2" y="7" width="18" height="11" rx="2"/><path d="M22 11v3" stroke="#212529" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+
+        <div class="nav-bar">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <h2>AI 饮食助手</h2>
+              <p>今日已摄入 <strong style="color:var(--green-dk)">1,240</strong> / 1,800 kcal</p>
+            </div>
+            <div style="width:40px;height:40px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;">🤖</div>
+          </div>
+          <!-- Progress bar -->
+          <div style="margin-top:10px;height:6px;background:var(--gray2);border-radius:3px;overflow:hidden;">
+            <div style="width:69%;height:100%;background:linear-gradient(90deg,var(--green),var(--orange));border-radius:3px;"></div>
+          </div>
+        </div>
+
+        <div class="chat-area">
+          <div class="date-chip"><span>今天 · 2026年3月17日</span></div>
+
+          <!-- AI greeting -->
+          <div class="bubble-row">
+            <div class="avatar ai">🤖</div>
+            <div class="bubble ai-bubble">
+              早上好！我是你的 AI 营养师 🌱<br>
+              今天吃了什么？拍张照片或描述一下吧～
+            </div>
+          </div>
+
+          <!-- User uploads image -->
+          <div class="bubble-row right">
+            <div class="avatar">👤</div>
+            <div>
+              <div class="img-bubble">
+                <div class="img-placeholder">🍜</div>
+                <div class="img-overlay">番茄鸡蛋面</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI analyzing -->
+          <div class="bubble-row">
+            <div class="avatar ai">🤖</div>
+            <div>
+              <div class="bubble ai-bubble">
+                已识别到你的午餐 🔍 正在分析营养成分…
+              </div>
+              <!-- Nutrition card -->
+              <div class="nutrition-card">
+                <div class="food-name">🍜 番茄鸡蛋面（约350g）</div>
+                <div class="nut-row">
+                  <div class="nut-item">
+                    <div class="nut-val">420</div>
+                    <div class="nut-lbl">千卡</div>
+                  </div>
+                  <div class="nut-item">
+                    <div class="nut-val" style="color:var(--blue)">58g</div>
+                    <div class="nut-lbl">碳水</div>
+                  </div>
+                  <div class="nut-item">
+                    <div class="nut-val" style="color:var(--purple)">18g</div>
+                    <div class="nut-lbl">蛋白质</div>
+                  </div>
+                  <div class="nut-item">
+                    <div class="nut-val" style="color:var(--orange)">12g</div>
+                    <div class="nut-lbl">脂肪</div>
+                  </div>
+                </div>
+                <div class="calorie-bar-wrap">
+                  <div class="lbl">
+                    <span>今日热量进度</span>
+                    <span style="color:var(--green-dk);font-weight:600">1,660 / 1,800 kcal</span>
+                  </div>
+                  <div class="calorie-bar">
+                    <div class="calorie-bar-fill" style="width:92%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI suggestion -->
+          <div class="bubble-row">
+            <div class="avatar ai">🤖</div>
+            <div class="bubble ai-bubble">
+              不错的选择！但今天剩余热量仅 <strong style="color:var(--orange)">140 kcal</strong>，晚餐建议选择沙拉或清汤类 🥗
+            </div>
+          </div>
+
+          <!-- User text -->
+          <div class="bubble-row right">
+            <div class="avatar">👤</div>
+            <div class="bubble user-bubble">好的！我今晚打算吃水煮青菜</div>
+          </div>
+
+          <!-- Typing -->
+          <div class="bubble-row">
+            <div class="avatar ai">🤖</div>
+            <div class="bubble ai-bubble">
+              <div class="typing"><span></span><span></span><span></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input bar -->
+        <div class="chat-input-bar">
+          <div class="chat-btn camera">📷</div>
+          <div class="chat-input"><span>描述你吃了什么…</span></div>
+          <div class="chat-btn send">↑</div>
+        </div>
+
+        <!-- Tab bar -->
+        <div class="tab-bar">
+          <div class="tab-item"><div class="tab-icon">🏠</div><span>首页</span></div>
+          <div class="tab-item active"><div class="tab-icon">💬</div><div class="tab-dot"></div><span>饮食</span></div>
+          <div class="tab-item"><div class="tab-icon">📊</div><span>报表</span></div>
+          <div class="tab-item"><div class="tab-icon">👤</div><span>我的</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SCREEN 3: 数据报表
+    =========================================== -->
+    <div class="phone-wrap">
+      <span class="phone-label">03 · 数据报表</span>
+      <div class="phone s3">
+        <div class="status-bar">
+          <span class="time" style="color:var(--text)">9:41</span>
+          <div class="icons">
+            <svg viewBox="0 0 24 24" fill="#212529"><rect x="1" y="6" width="6" height="12" rx="1"/><rect x="9" y="3" width="6" height="15" rx="1"/><rect x="17" y="1" width="6" height="17" rx="1"/></svg>
+            <svg viewBox="0 0 24 24" fill="#212529"><rect x="2" y="7" width="18" height="11" rx="2"/><path d="M22 11v3" stroke="#212529" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+
+        <div class="dash-header">
+          <div class="dash-header-row">
+            <div>
+              <h2>健康报表</h2>
+            </div>
+            <div class="period-tabs">
+              <div class="period-tab">周</div>
+              <div class="period-tab active">月</div>
+              <div class="period-tab">半年</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-body">
+
+          <!-- Summary 4-card grid -->
+          <div class="summary-cards">
+            <div class="sum-card">
+              <div class="sc-icon">⚖️</div>
+              <div><span class="sc-val">73.2</span><span class="sc-unit">kg</span></div>
+              <div class="sc-lbl">当前体重</div>
+              <div class="sc-delta down">▼ 4.8kg · 本月</div>
+            </div>
+            <div class="sum-card">
+              <div class="sc-icon">🔥</div>
+              <div><span class="sc-val">1,640</span><span class="sc-unit">kcal</span></div>
+              <div class="sc-lbl">日均摄入</div>
+              <div class="sc-delta down">▼ 目标达成 91%</div>
+            </div>
+            <div class="sum-card">
+              <div class="sc-icon">🥗</div>
+              <div><span class="sc-val">28</span><span class="sc-unit">天</span></div>
+              <div class="sc-lbl">记录天数</div>
+              <div class="sc-delta" style="color:var(--blue)">🔥 连续 12 天</div>
+            </div>
+            <div class="sum-card">
+              <div class="sc-icon">💪</div>
+              <div><span class="sc-val">86</span><span class="sc-unit">分</span></div>
+              <div class="sc-lbl">饮食健康评分</div>
+              <div class="sc-delta up" style="color:var(--green-dk)">▲ +8 较上月</div>
+            </div>
+          </div>
+
+          <!-- Weight Trend -->
+          <div class="chart-card">
+            <div class="cc-header">
+              <div>
+                <div class="cc-title">体重变化趋势</div>
+                <div class="cc-sub">近30天 · 单位 kg</div>
+              </div>
+              <div class="legend">
+                <div class="legend-item"><div class="legend-dot" style="background:var(--green-dk)"></div>实际</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--blue);opacity:.5"></div>目标</div>
+              </div>
+            </div>
+            <!-- SVG line chart -->
+            <svg class="weight-svg" viewBox="0 0 327 110" fill="none">
+              <!-- Grid -->
+              <line x1="0" y1="90" x2="327" y2="90" stroke="#e9ecef" stroke-width="1"/>
+              <line x1="0" y1="60" x2="327" y2="60" stroke="#e9ecef" stroke-width="1"/>
+              <line x1="0" y1="30" x2="327" y2="30" stroke="#e9ecef" stroke-width="1"/>
+              <!-- Y labels -->
+              <text x="0" y="94" font-size="9" fill="#adb5bd">74</text>
+              <text x="0" y="64" font-size="9" fill="#adb5bd">76</text>
+              <text x="0" y="34" font-size="9" fill="#adb5bd">78</text>
+              <!-- Target line -->
+              <path d="M16 55 L327 40" stroke="#3498db" stroke-width="1.5" stroke-dasharray="5 3" opacity=".5"/>
+              <!-- Area gradient -->
+              <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#2ecc71" stop-opacity=".25"/>
+                  <stop offset="100%" stop-color="#2ecc71" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M16 82 C30 80 50 78 70 76 C90 74 110 74 130 71 C150 68 165 66 185 63 C205 60 225 57 250 54 C270 52 290 50 311 47 L311 90 L16 90 Z" fill="url(#areaGrad)"/>
+              <!-- Line -->
+              <path d="M16 82 C30 80 50 78 70 76 C90 74 110 74 130 71 C150 68 165 66 185 63 C205 60 225 57 250 54 C270 52 290 50 311 47" stroke="#27ae60" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Dots -->
+              <circle cx="16"  cy="82" r="4" fill="#27ae60"/>
+              <circle cx="130" cy="71" r="4" fill="#27ae60"/>
+              <circle cx="311" cy="47" r="5" fill="#27ae60" stroke="#fff" stroke-width="2"/>
+              <!-- Tooltip -->
+              <rect x="270" y="18" width="56" height="22" rx="6" fill="#27ae60"/>
+              <text x="298" y="33" font-size="10" fill="white" text-anchor="middle" font-weight="bold">73.2 kg</text>
+              <line x1="311" y1="47" x2="311" y2="40" stroke="#27ae60" stroke-width="1.5" stroke-dasharray="3 2"/>
+            </svg>
+          </div>
+
+          <!-- Calorie bar chart -->
+          <div class="chart-card">
+            <div class="cc-header">
+              <div>
+                <div class="cc-title">近7日热量摄入</div>
+                <div class="cc-sub">目标线：1,800 kcal</div>
+              </div>
+            </div>
+            <div style="position:relative;height:90px;">
+              <!-- Target line -->
+              <div style="position:absolute;top:5%;left:0;right:0;border-top:1.5px dashed var(--orange);"></div>
+              <div style="position:absolute;top:0;right:0;font-size:10px;color:var(--orange);background:#fff;padding:0 4px;">目标</div>
+              <div class="bar-chart">
+                <div class="bar-col">
+                  <div class="bar-outer"><div class="bar-inner" style="height:72%;background:linear-gradient(to top,var(--green),#a8e6cf)"></div></div>
+                  <div class="bar-lbl">周一</div>
+                </div>
+                <div class="bar-col">
+                  <div class="bar-outer"><div class="bar-inner" style="height:85%;background:linear-gradient(to top,var(--orange),#ffd89b)"></div></div>
+                  <div class="bar-lbl">周二</div>
+                </div>
+                <div class="bar-col">
+                  <div class="bar-outer"><div class="bar-inner" style="height:68%;background:linear-gradient(to top,var(--green),#a8e6cf)"></div></div>
+                  <div class="bar-lbl">周三</div>
+                </div>
+                <div class="bar-col">
+                  <div class="bar-outer"><div class="bar-inner" style="height:90%;background:linear-gradient(to top,var(--red),#ffb3b3)"></div></div>
+                  <div class="bar-lbl">周四</div>
+                </div>
+                <div class="bar-col">
+                  <div class="bar-outer"><div class="bar-inner" style="height:75%;background:linear-gradient(to top,var(--green),#a8e6cf)"></div></div>
+                  <div class="bar-lbl">周五</div>
+                </div>
+                <div class="bar-col">
+                  <div class="bar-outer"><div class="bar-inner" style="height:60%;background:linear-gradient(to top,var(--green),#a8e6cf)"></div></div>
+                  <div class="bar-lbl">周六</div>
+                </div>
+                <div class="bar-col">
+                  <div class="bar-outer"><div class="bar-inner" style="height:70%;background:linear-gradient(to top,var(--green),#a8e6cf)"></div></div>
+                  <div class="bar-lbl">周日</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Macro distribution -->
+          <div class="chart-card">
+            <div class="cc-header">
+              <div class="cc-title">营养素分布</div>
+              <div class="cc-sub">本月平均</div>
+            </div>
+            <div class="macro-wrap">
+              <!-- Donut SVG -->
+              <svg class="donut-svg" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#f0f0f0" stroke-width="14"/>
+                <!-- Carbs 52% -->
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#3498db" stroke-width="14"
+                  stroke-dasharray="124 239" stroke-dashoffset="-60" stroke-linecap="round"/>
+                <!-- Protein 28% -->
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#9b59b6" stroke-width="14"
+                  stroke-dasharray="67 239" stroke-dashoffset="-184" stroke-linecap="round"/>
+                <!-- Fat 20% -->
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#f39c12" stroke-width="14"
+                  stroke-dasharray="48 239" stroke-dashoffset="-251" stroke-linecap="round"/>
+                <text x="50" y="46" text-anchor="middle" font-size="11" font-weight="700" fill="#212529">均衡</text>
+                <text x="50" y="58" text-anchor="middle" font-size="9" fill="#868e96">评分 86</text>
+              </svg>
+              <div class="macro-list">
+                <div class="macro-item">
+                  <span class="macro-lbl">碳水</span>
+                  <div class="macro-bar-bg"><div class="macro-bar" style="width:52%;background:#3498db"></div></div>
+                  <span class="macro-pct" style="color:#3498db">52%</span>
+                </div>
+                <div class="macro-item">
+                  <span class="macro-lbl">蛋白</span>
+                  <div class="macro-bar-bg"><div class="macro-bar" style="width:28%;background:#9b59b6"></div></div>
+                  <span class="macro-pct" style="color:#9b59b6">28%</span>
+                </div>
+                <div class="macro-item">
+                  <span class="macro-lbl">脂肪</span>
+                  <div class="macro-bar-bg"><div class="macro-bar" style="width:20%;background:#f39c12"></div></div>
+                  <span class="macro-pct" style="color:#f39c12">20%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Achievements -->
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;">🏆 成就徽章</div>
+            <div class="badge-row">
+              <div class="badge">
+                <div class="b-icon">🔥</div>
+                <div class="b-name">打卡 7 天</div>
+              </div>
+              <div class="badge">
+                <div class="b-icon">⚖️</div>
+                <div class="b-name">减重 5kg</div>
+              </div>
+              <div class="badge locked">
+                <div class="b-icon">🏃</div>
+                <div class="b-name">运动达人</div>
+              </div>
+              <div class="badge locked">
+                <div class="b-icon">🥇</div>
+                <div class="b-name">目标达成</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Suggestion -->
+          <div class="suggestion-card">
+            <div class="sg-header">
+              <div class="sg-icon">✨</div>
+              <div>
+                <div class="sg-title">AI 月度建议</div>
+                <div class="sg-sub">基于你本月的饮食数据生成</div>
+              </div>
+            </div>
+            <ul>
+              <li>本月蛋白质摄入偏低，建议增加鸡蛋、豆腐等优质蛋白 🥚</li>
+              <li>周四热量超标，通常是晚餐时间，尝试控制夜宵 🌙</li>
+              <li>减重趋势良好！保持当前饮食节奏，预计下月再减 3kg 💪</li>
+            </ul>
+          </div>
+
+          <!-- Bottom spacer for tab bar -->
+          <div style="height:4px"></div>
+        </div>
+
+        <!-- Tab bar -->
+        <div class="tab-bar">
+          <div class="tab-item"><div class="tab-icon">🏠</div><span>首页</span></div>
+          <div class="tab-item"><div class="tab-icon">💬</div><span>饮食</span></div>
+          <div class="tab-item active"><div class="tab-icon">📊</div><div class="tab-dot"></div><span>报表</span></div>
+          <div class="tab-item"><div class="tab-icon">👤</div><span>我的</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /gallery -->
+
+</body>
+</html>
