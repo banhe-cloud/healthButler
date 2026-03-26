@@ -1,4 +1,5 @@
-const BASE_URL = 'http://localhost:3000';
+//const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://101.34.87.20:3000';
 
 /**
  * 微信 code 换 openid
